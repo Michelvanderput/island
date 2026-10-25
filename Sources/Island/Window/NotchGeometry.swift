@@ -21,6 +21,16 @@ struct NotchGeometry {
 
     /// Kleine buitenwaartse rondingen bovenaan, zodat het eiland naadloos uit de schermrand loopt.
     var topRadius: CGFloat { 6 }
-    var expandedSize: CGSize { CGSize(width: 560, height: notchSize.height + 148) }
-    var windowSize: CGSize { CGSize(width: expandedSize.width + topRadius * 2 + 60, height: expandedSize.height + 40) }
+
+    /// Hangt af van de instelling 'Grootte uitgeklapt'.
+    var expandedSize: CGSize {
+        let base = ExpandedSize.current.size
+        return CGSize(width: base.width, height: notchSize.height + base.height)
+    }
+
+    /// Het venster is altijd groot genoeg voor de grootste stand.
+    var windowSize: CGSize {
+        let largest = ExpandedSize.large.size
+        return CGSize(width: largest.width + topRadius * 2 + 60, height: notchSize.height + largest.height + 40)
+    }
 }

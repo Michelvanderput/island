@@ -6,7 +6,12 @@ struct IslandView: View {
     @EnvironmentObject var state: IslandState
     @EnvironmentObject var nowPlaying: NowPlayingService
     @EnvironmentObject var tray: FileTrayStore
+    @EnvironmentObject var lyrics: LyricsService
+    // Alleen zodat het eiland meteen meeverandert als deze instellingen wijzigen.
     @AppStorage(Pref.compactMusic) private var compactMusic = true
+    @AppStorage(Pref.lyricsInNotch) private var lyricsInNotch = false
+    @AppStorage(Pref.expandedSize) private var expandedSize = ExpandedSize.standard.rawValue
+    @AppStorage(Pref.artworkAccent) private var artworkAccent = true
 
     var body: some View {
         let mode = vm.mode
@@ -47,8 +52,11 @@ struct IslandView: View {
         switch mode {
         case .idle:
             Color.clear
-        case .music:
-            CompactMusicView(wing: vm.musicWing, notchHeight: vm.geometry.notchSize.height)
+        case .music(let caption):
+            CompactMusicView(wing: caption ? vm.hudWing : vm.musicWing, notchHeight: vm.geometry.notchSize.height,
+                             caption: caption ? .lyrics : nil)
+        case .hud(.track):
+            CompactMusicView(wing: vm.hudWing, notchHeight: vm.geometry.notchSize.height, caption: .track)
         case .hud(let hud):
             HUDView(hud: hud, wing: vm.hudWing, notchHeight: vm.geometry.notchSize.height)
         case .expanded:
@@ -74,21 +82,46 @@ struct IslandView: View {
 
 // MARK: Compact
 
+enum CompactCaption {
+    case lyrics, track
+}
+
 struct CompactMusicView: View {
     let wing: CGFloat
     let notchHeight: CGFloat
+    var caption: CompactCaption?
     @EnvironmentObject var state: IslandState
     @EnvironmentObject var nowPlaying: NowPlayingService
 
     var body: some View {
-        HStack(spacing: 0) {
-            ArtworkView(image: nowPlaying.artwork, size: notchHeight - 10, radius: 5)
-                .frame(width: wing)
-            Spacer(minLength: 0)
-            WaveformView(isPlaying: nowPlaying.isPlaying, color: Color(nsColor: state.accentColor), maxHeight: notchHeight * 0.45)
-                .frame(width: wing)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ArtworkView(image: nowPlaying.artwork, size: notchHeight - 10, radius: 5)
+                    .frame(width: wing, alignment: caption == nil ? .center : .leading)
+                    .padding(.leading, caption == nil ? 0 : 10)
+                Spacer(minLength: 0)
+                WaveformView(isPlaying: nowPlaying.isPlaying, color: Color(nsColor: state.accentColor), maxHeight: notchHeight * 0.45)
+                    .frame(width: wing, alignment: caption == nil ? .center : .trailing)
+                    .padding(.trailing, caption == nil ? 0 : 10)
+            }
+            .frame(height: notchHeight)
+
+            switch caption {
+            case .lyrics:
+                CurrentLyricLine(fontSize: 12)
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .track:
+                Text([nowPlaying.track?.title, nowPlaying.track?.artist].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " — "))
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case nil:
+                EmptyView()
+            }
         }
-        .frame(maxHeight: .infinity)
+        .foregroundStyle(.white)
     }
 }
 
@@ -118,6 +151,8 @@ struct HUDView: View {
         case .bluetooth(let info, _):
             Image(systemName: info.symbol)
                 .foregroundStyle(.white)
+        case .track:
+            EmptyView()
         }
     }
 
@@ -142,6 +177,8 @@ struct HUDView: View {
             } else {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             }
+        case .track:
+            EmptyView()
         }
     }
 }

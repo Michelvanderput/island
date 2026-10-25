@@ -23,14 +23,18 @@ final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
-/// Plaatst het eiland bovenaan het scherm en regelt hover: uitklappen bij aanwijzen, inklappen bij weggaan.
+/// Plaatst het eiland bovenaan het scherm en regelt openen (aanwijzen, klikken of sneltoets) en sluiten.
 final class NotchWindowController: NSObject {
-    private let screen: NSScreen
+    let screen: NSScreen
     private let panel: NotchPanel
     private let viewModel: NotchViewModel
     private var monitors: [Any] = []
     private var expandWork: DispatchWorkItem?
     private var collapseWork: DispatchWorkItem?
+    /// Geopend met de sneltoets: blijft open tot je erin en weer uit gaat, of buiten klikt.
+    private var pinned = false
+
+    var isExpanded: Bool { viewModel.isExpanded }
 
     init(screen: NSScreen, state: IslandState) {
         self.screen = screen
@@ -51,6 +55,7 @@ final class NotchWindowController: NSObject {
             .environmentObject(state.bluetooth)
             .environmentObject(state.weather)
             .environmentObject(state.tray)
+            .environmentObject(state.audio)
         let host = FirstMouseHostingView(rootView: root)
         host.sizingOptions = []
         host.frame = NSRect(origin: .zero, size: size)
@@ -69,17 +74,26 @@ final class NotchWindowController: NSObject {
         panel.close()
     }
 
+    func toggleFromHotKey() {
+        if viewModel.isExpanded {
+            collapse()
+        } else {
+            pinned = true
+            expand(tab: nil)
+        }
+    }
+
     // MARK: Muis
 
     private func installMonitors() {
-        let moveMask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseUp]
-        if let global = NSEvent.addGlobalMonitorForEvents(matching: moveMask, handler: { [weak self] event in
-            self?.handle(event)
+        let mask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseUp, .leftMouseDown]
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] event in
+            self?.handle(event, isLocal: false)
         }) {
             monitors.append(global)
         }
-        if let local = NSEvent.addLocalMonitorForEvents(matching: moveMask, handler: { [weak self] event in
-            self?.handle(event)
+        if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { [weak self] event in
+            self?.handle(event, isLocal: true)
             return event
         }) {
             monitors.append(local)
@@ -93,12 +107,20 @@ final class NotchWindowController: NSObject {
                height: size.height)
     }
 
-    private func handle(_ event: NSEvent) {
+    private func handle(_ event: NSEvent, isLocal: Bool) {
         let location = NSEvent.mouseLocation
         let isDragging = event.type == .leftMouseDragged
 
         if viewModel.isExpanded {
             let inside = islandRect(viewModel.geometry.expandedSize).insetBy(dx: -12, dy: -12).contains(location)
+            if pinned {
+                if inside {
+                    pinned = false
+                } else if event.type == .leftMouseDown, !isLocal {
+                    collapse()
+                }
+                return
+            }
             if inside || NSEvent.pressedMouseButtons != 0 {
                 collapseWork?.cancel()
                 collapseWork = nil
@@ -110,7 +132,7 @@ final class NotchWindowController: NSObject {
             return
         }
 
-        // Ingeklapt: de hot zone is het zichtbare eiland, met wat marge naar onderen.
+        // Ingeklapt: de hot zone is het zichtbare eiland, met wat marge.
         var hot = islandRect(viewModel.currentSize).insetBy(dx: -6, dy: -6)
         if isDragging { hot = hot.insetBy(dx: -30, dy: -20) }
         guard hot.contains(location) else {
@@ -123,6 +145,11 @@ final class NotchWindowController: NSObject {
             let types = NSPasteboard(name: .drag).types ?? []
             guard types.contains(.fileURL) else { return }
             expand(tab: .tray)
+            return
+        }
+
+        if OpenMode.current == .click {
+            if event.type == .leftMouseDown { expand(tab: nil) }
             return
         }
 
@@ -146,21 +173,20 @@ final class NotchWindowController: NSObject {
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
         }
         withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
-            if let tab {
-                viewModel.tab = tab
-            } else if viewModel.tab == .lyrics, viewModel.state.lyrics.lines.isEmpty {
-                viewModel.tab = .home
-            }
+            viewModel.prepareForOpening(tab: tab)
             viewModel.isExpanded = true
         }
     }
 
     private func collapse() {
+        collapseWork?.cancel()
         collapseWork = nil
+        pinned = false
         guard viewModel.isExpanded else { return }
         panel.ignoresMouseEvents = true
         withAnimation(.spring(response: 0.38, dampingFraction: 0.85)) {
             viewModel.isExpanded = false
+            viewModel.showOutputs = false
         }
         if viewModel.tab == .tray, viewModel.state.tray.items.isEmpty { viewModel.tab = .home }
     }

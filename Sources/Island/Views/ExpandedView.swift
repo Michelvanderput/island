@@ -12,13 +12,17 @@ struct ExpandedView: View {
             header
                 .frame(height: vm.geometry.notchSize.height)
             Group {
+                if vm.showOutputs {
+                    AudioOutputList(onSelect: { withAnimation { vm.showOutputs = false } })
+                } else {
                 switch vm.tab {
                 case .home:
-                    if nowPlaying.track != nil { PlayerView() } else { IdleHomeView() }
+                    if nowPlaying.track != nil { PlayerView(vm: vm) } else { IdleHomeView() }
                 case .lyrics:
                     LyricsView()
                 case .tray:
                     TrayView()
+                }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -32,11 +36,11 @@ struct ExpandedView: View {
     private var header: some View {
         HStack(spacing: 0) {
             HStack(spacing: 2) {
-                IconButton(symbol: "house.fill", size: 12, active: vm.tab == .home) { vm.tab = .home }
+                IconButton(symbol: "house.fill", size: 12, active: vm.tab == .home && !vm.showOutputs) { vm.select(.home) }
                 if !lyrics.lines.isEmpty {
-                    IconButton(symbol: "quote.bubble.fill", size: 12, active: vm.tab == .lyrics) { vm.tab = .lyrics }
+                    IconButton(symbol: "quote.bubble.fill", size: 12, active: vm.tab == .lyrics && !vm.showOutputs) { vm.select(.lyrics) }
                 }
-                IconButton(symbol: tray.items.isEmpty ? "tray" : "tray.full.fill", size: 12, active: vm.tab == .tray) { vm.tab = .tray }
+                IconButton(symbol: tray.items.isEmpty ? "tray" : "tray.full.fill", size: 12, active: vm.tab == .tray && !vm.showOutputs) { vm.select(.tray) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 14)
@@ -82,6 +86,7 @@ private struct StatusCluster: View {
 // MARK: Speler
 
 struct PlayerView: View {
+    @ObservedObject var vm: NotchViewModel
     @EnvironmentObject var state: IslandState
     @EnvironmentObject var nowPlaying: NowPlayingService
     @EnvironmentObject var lyrics: LyricsService
@@ -113,7 +118,7 @@ struct PlayerView: View {
 
                 Spacer(minLength: 4)
                 ScrubberView()
-                ControlsView()
+                ControlsView(vm: vm)
                     .padding(.top, 2)
             }
         }
@@ -121,6 +126,7 @@ struct PlayerView: View {
 }
 
 struct CurrentLyricLine: View {
+    var fontSize: CGFloat = 12
     @EnvironmentObject var nowPlaying: NowPlayingService
     @EnvironmentObject var lyrics: LyricsService
 
@@ -131,7 +137,7 @@ struct CurrentLyricLine: View {
             TimelineView(.periodic(from: .now, by: 0.25)) { context in
                 let index = lyrics.index(at: nowPlaying.currentPosition(at: context.date))
                 Text(index.map { lyrics.lines[$0].text } ?? "♪")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: fontSize, weight: fontSize > 14 ? .semibold : .medium))
                     .foregroundStyle(.white.opacity(0.85))
                     .lineLimit(1)
                     .id(index ?? -1)
@@ -143,6 +149,7 @@ struct CurrentLyricLine: View {
 }
 
 struct ScrubberView: View {
+    var inlineTimes = false
     @EnvironmentObject var nowPlaying: NowPlayingService
     @State private var dragValue: Double?
     @State private var hovering = false
@@ -151,7 +158,12 @@ struct ScrubberView: View {
         TimelineView(.periodic(from: .now, by: 0.5)) { context in
             let duration = max(nowPlaying.track?.duration ?? 0, 1)
             let position = dragValue ?? nowPlaying.currentPosition(at: context.date)
-            VStack(spacing: 3) {
+            let timeFont = Font.system(size: inlineTimes ? 9 : 10, weight: .medium).monospacedDigit()
+            let layout = inlineTimes ? AnyLayout(HStackLayout(spacing: 6)) : AnyLayout(VStackLayout(spacing: 3))
+            layout {
+                if inlineTimes {
+                    Text(formatTime(position)).font(timeFont).foregroundStyle(.white.opacity(0.6))
+                }
                 GeometryReader { geo in
                     let width = geo.size.width
                     ZStack(alignment: .leading) {
@@ -178,35 +190,52 @@ struct ScrubberView: View {
                 }
                 .frame(height: 12)
 
-                HStack {
-                    Text(formatTime(position))
-                    Spacer()
-                    Text("-" + formatTime(duration - position))
+                if inlineTimes {
+                    Text("-" + formatTime(duration - position)).font(timeFont).foregroundStyle(.white.opacity(0.6))
+                } else {
+                    HStack {
+                        Text(formatTime(position))
+                        Spacer()
+                        Text("-" + formatTime(duration - position))
+                    }
+                    .font(timeFont)
+                    .foregroundStyle(.white.opacity(0.5))
                 }
-                .font(.system(size: 10, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.5))
             }
         }
     }
 }
 
 struct ControlsView: View {
+    @ObservedObject var vm: NotchViewModel
     @EnvironmentObject var nowPlaying: NowPlayingService
+    @EnvironmentObject var audio: AudioOutputService
+    @AppStorage(Pref.showFavorite) private var showFavorite = true
 
     var body: some View {
         HStack(spacing: 22) {
-            if let source = nowPlaying.source {
-                Text(source.displayName)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .frame(width: 70, alignment: .leading)
+            HStack(spacing: 4) {
+                if showFavorite, let favorite = nowPlaying.isFavorite {
+                    IconButton(symbol: favorite ? "heart.fill" : "heart", size: 12) { nowPlaying.toggleFavorite() }
+                }
+                if let source = nowPlaying.source {
+                    Text(source.displayName)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineLimit(1)
+                }
             }
+            .frame(width: 96, alignment: .leading)
             Spacer(minLength: 0)
             IconButton(symbol: "backward.fill", size: 15) { nowPlaying.previous() }
             IconButton(symbol: nowPlaying.isPlaying ? "pause.fill" : "play.fill", size: 20) { nowPlaying.playPause() }
             IconButton(symbol: "forward.fill", size: 15) { nowPlaying.next() }
             Spacer(minLength: 0)
-            Color.clear.frame(width: 70)
+            IconButton(symbol: audio.current?.symbol ?? "speaker.wave.2.fill", size: 12) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { vm.showOutputs = true }
+            }
+            .help(audio.current?.name ?? "Audio-uitgang")
+            .frame(width: 96, alignment: .trailing)
         }
     }
 }

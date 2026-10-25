@@ -32,6 +32,12 @@ final class BatteryService: ObservableObject {
         started = true
     }
 
+    /// De ingestelde drempel plus 10 % en 5 %.
+    private var thresholds: [Int] {
+        let configured = UserDefaults.standard.integer(forKey: Pref.lowBatteryThreshold)
+        return Array(Set([5, 10, configured > 0 ? configured : 20])).sorted()
+    }
+
     private func update() {
         guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let list = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else { return }
@@ -58,9 +64,9 @@ final class BatteryService: ObservableObject {
             }
             if plugged {
                 lowWarned.removeAll()
-            } else if let threshold = [5, 10, 20].first(where: { newLevel <= $0 && !lowWarned.contains($0) }) {
+            } else if let threshold = thresholds.first(where: { newLevel <= $0 && !lowWarned.contains($0) }) {
                 // Alle drempels boven het huidige niveau gelden als gemeld.
-                lowWarned.formUnion([5, 10, 20].filter { $0 >= threshold })
+                lowWarned.formUnion(thresholds.filter { $0 >= threshold })
                 onEvent?(.lowBattery(level: newLevel))
             }
             return

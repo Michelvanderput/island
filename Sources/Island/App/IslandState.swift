@@ -6,6 +6,7 @@ enum HUD: Equatable {
     case charging(level: Int, pluggedIn: Bool)
     case lowBattery(level: Int)
     case bluetooth(BluetoothDeviceInfo, connected: Bool)
+    case track(Track)
 }
 
 /// Gedeelde toestand voor alle schermen: de services en de actieve melding.
@@ -16,11 +17,18 @@ final class IslandState: ObservableObject {
     let bluetooth = BluetoothService()
     let weather = WeatherService()
     let tray = FileTrayStore()
+    let audio = AudioOutputService()
 
     @Published private(set) var hud: HUD?
-    @Published private(set) var accentColor: NSColor = .white
+    @Published private(set) var artworkColor: NSColor = .white
+
+    /// Kleur voor golfvorm en gloed: uit de hoes, of wit als dat uit staat.
+    var accentColor: NSColor { Pref.bool(Pref.artworkAccent) ? artworkColor : .white }
 
     var openSettings: (() -> Void)?
+    var previewLockScreen: (() -> Void)?
+    /// Of er op dit moment een eiland open is (dan geen nummerwissel-melding).
+    var isAnyIslandExpanded: () -> Bool = { false }
 
     private var hudWork: DispatchWorkItem?
     private var cancellables = Set<AnyCancellable>()
@@ -34,15 +42,32 @@ final class IslandState: ObservableObject {
             .sink { [weak self] in self?.lyrics.load($0) }
             .store(in: &cancellables)
 
+        // Nummerwissel: pas tonen zodra de nieuwe hoes binnen is (of na een halve seconde).
+        nowPlaying.$track
+            .removeDuplicates()
+            .scan((nil, nil)) { (pair: (Track?, Track?), next: Track?) in (pair.1, next) }
+            .compactMap { pair -> Track? in
+                guard pair.0 != nil, let next = pair.1 else { return nil }
+                return next
+            }
+            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+            .sink { [weak self] track in
+                guard let self, Pref.bool(Pref.trackChangeHUD), self.nowPlaying.isPlaying,
+                      !self.isAnyIslandExpanded(), self.hud == nil else { return }
+                self.show(.track(track), for: 2.5)
+            }
+            .store(in: &cancellables)
+
         nowPlaying.$artwork
             .map { $0?.averageColor ?? .white }
-            .sink { [weak self] in self?.accentColor = $0 }
+            .sink { [weak self] in self?.artworkColor = $0 }
             .store(in: &cancellables)
 
         nowPlaying.start()
         battery.start()
         bluetooth.start()
         weather.start()
+        audio.start()
     }
 
     func show(_ hud: HUD, for seconds: Double = 3) {
