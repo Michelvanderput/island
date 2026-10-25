@@ -149,7 +149,6 @@ struct CurrentLyricLine: View {
 }
 
 struct ScrubberView: View {
-    var inlineTimes = false
     @EnvironmentObject var nowPlaying: NowPlayingService
     @State private var dragValue: Double?
     @State private var hovering = false
@@ -158,12 +157,7 @@ struct ScrubberView: View {
         TimelineView(.periodic(from: .now, by: 0.5)) { context in
             let duration = max(nowPlaying.track?.duration ?? 0, 1)
             let position = dragValue ?? nowPlaying.currentPosition(at: context.date)
-            let timeFont = Font.system(size: inlineTimes ? 9 : 10, weight: .medium).monospacedDigit()
-            let layout = inlineTimes ? AnyLayout(HStackLayout(spacing: 6)) : AnyLayout(VStackLayout(spacing: 3))
-            layout {
-                if inlineTimes {
-                    Text(formatTime(position)).font(timeFont).foregroundStyle(.white.opacity(0.6))
-                }
+            VStack(spacing: 3) {
                 GeometryReader { geo in
                     let width = geo.size.width
                     ZStack(alignment: .leading) {
@@ -190,17 +184,13 @@ struct ScrubberView: View {
                 }
                 .frame(height: 12)
 
-                if inlineTimes {
-                    Text("-" + formatTime(duration - position)).font(timeFont).foregroundStyle(.white.opacity(0.6))
-                } else {
-                    HStack {
-                        Text(formatTime(position))
-                        Spacer()
-                        Text("-" + formatTime(duration - position))
-                    }
-                    .font(timeFont)
-                    .foregroundStyle(.white.opacity(0.5))
+                HStack {
+                    Text(formatTime(position))
+                    Spacer()
+                    Text("-" + formatTime(duration - position))
                 }
+                .font(.system(size: 10, weight: .medium).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.5))
             }
         }
     }

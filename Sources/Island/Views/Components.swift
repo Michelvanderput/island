@@ -93,3 +93,73 @@ func formatTime(_ seconds: Double) -> String {
     let s = Int(seconds.rounded(.down))
     return String(format: "%d:%02d", s / 60, s % 60)
 }
+
+/// Lijst met audio-uitgangen plus volume; gebruikt in de uitgeklapte notch.
+struct AudioOutputList: View {
+    var onSelect: () -> Void = {}
+    @EnvironmentObject var audio: AudioOutputService
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: audio.volume == 0 ? "speaker.slash.fill" : "speaker.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.7))
+                VolumeSlider(value: Binding(get: { Double(audio.volume) }, set: { audio.setVolume(Float($0)) }))
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 4) {
+                    ForEach(audio.devices) { device in
+                        Button {
+                            audio.select(device)
+                            onSelect()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: device.symbol)
+                                    .font(.system(size: 14))
+                                    .frame(width: 22)
+                                Text(device.name)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .lineLimit(1)
+                                Spacer()
+                                if device.id == audio.currentID {
+                                    Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Color.white.opacity(device.id == audio.currentID ? 0.16 : 0.05)))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .foregroundStyle(.white)
+    }
+}
+
+struct VolumeSlider: View {
+    @Binding var value: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.18))
+                Capsule().fill(Color.white).frame(width: geo.size.width * value)
+            }
+            .frame(height: 5)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { g in
+                value = max(0, min(1, g.location.x / max(geo.size.width, 1)))
+            })
+        }
+        .frame(height: 14)
+    }
+}

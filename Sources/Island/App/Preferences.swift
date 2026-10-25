@@ -25,12 +25,6 @@ enum Pref {
     static let lyricsEnabled = "lyricsEnabled"
     static let showFavorite = "showFavorite"
 
-    // Vergrendelscherm
-    static let lockScreenEnabled = "lockScreenEnabled"
-    static let lockScreenLyrics = "lockScreenLyrics"
-    static let lockScreenWidgets = "lockScreenWidgets"
-    static let lockScreenArtworkScale = "lockScreenArtworkScale"
-
     // Widgets & meldingen
     static let weatherEnabled = "weatherEnabled"
     static let weatherCity = "weatherCity"
@@ -61,11 +55,6 @@ enum Pref {
         preferredPlayer: PreferredPlayer.automatic.rawValue,
         lyricsEnabled: true,
         showFavorite: true,
-
-        lockScreenEnabled: true,
-        lockScreenLyrics: true,
-        lockScreenWidgets: true,
-        lockScreenArtworkScale: 1.0,
 
         weatherEnabled: true,
         weatherCity: "",

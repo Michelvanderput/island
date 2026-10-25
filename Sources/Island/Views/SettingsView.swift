@@ -8,7 +8,6 @@ struct SettingsView: View {
             GeneralSettings().tabItem { Label("Algemeen", systemImage: "gearshape") }
             NotchSettings().tabItem { Label("Notch", systemImage: "capsule.fill") }
             MediaSettings().tabItem { Label("Media", systemImage: "music.note") }
-            LockScreenSettings().tabItem { Label("Vergrendelscherm", systemImage: "lock.fill") }
             WidgetSettings().tabItem { Label("Widgets", systemImage: "square.grid.2x2") }
             DiagnosticsView().tabItem { Label("Diagnose", systemImage: "waveform.path.ecg") }
         }
@@ -186,38 +185,6 @@ private struct AudioOutputSettingsRows: View {
         })) {
             ForEach(audio.devices) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
         }
-    }
-}
-
-private struct LockScreenSettings: View {
-    @EnvironmentObject var state: IslandState
-    @AppStorage(Pref.lockScreenEnabled) private var enabled = true
-    @AppStorage(Pref.lockScreenLyrics) private var lyrics = true
-    @AppStorage(Pref.lockScreenWidgets) private var widgets = true
-    @AppStorage(Pref.lockScreenArtworkScale) private var artworkScale = 1.0
-
-    var body: some View {
-        Form {
-            Section {
-                Toggle("Speler op het vergrendelscherm", isOn: $enabled)
-                Toggle("Meelopende songtekst", isOn: $lyrics).disabled(!enabled)
-                Toggle("Widgets: weer, batterij en AirPods", isOn: $widgets).disabled(!enabled)
-                LabeledContent("Grootte van de hoes") {
-                    Slider(value: $artworkScale, in: 0.6...1.2) {
-                        EmptyView()
-                    } minimumValueLabel: { Text("S") } maximumValueLabel: { Text("L") }
-                }
-                .disabled(!enabled)
-            } footer: {
-                Text("Op het vergrendelscherm zie je de hoes, een glazen speler met hartje en audio-uitgang, en eventueel de songtekst en widgets. Dit gebruikt een niet-openbare macOS-techniek; werkt die na een macOS-update niet meer, dan zie je gewoon niets.")
-            }
-            Section {
-                Button("Voorbeeld tonen") { state.previewLockScreen?() }
-            } footer: {
-                Text("Toont de weergave een paar seconden over je bureaublad. Klik om te sluiten.")
-            }
-        }
-        .formStyle(.grouped)
     }
 }
 

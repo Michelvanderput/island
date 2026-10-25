@@ -26,7 +26,6 @@ final class IslandState: ObservableObject {
     var accentColor: NSColor { Pref.bool(Pref.artworkAccent) ? artworkColor : .white }
 
     var openSettings: (() -> Void)?
-    var previewLockScreen: (() -> Void)?
     /// Of er op dit moment een eiland open is (dan geen nummerwissel-melding).
     var isAnyIslandExpanded: () -> Bool = { false }
 

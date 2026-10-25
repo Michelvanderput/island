@@ -7,7 +7,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
     private var hotKey: HotKey?
-    private var lockScreen: LockScreenController?
     private var cancellables = Set<AnyCancellable>()
 
     let state = IslandState()
@@ -18,11 +17,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.isAnyIslandExpanded = { [weak self] in self?.controllers.contains { $0.isExpanded } ?? false }
         state.start()
         rebuildWindows()
-
-        let lock = LockScreenController(state: state)
-        lock.start()
-        lockScreen = lock
-        state.previewLockScreen = { [weak lock] in lock?.preview() }
 
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)

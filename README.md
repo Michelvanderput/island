@@ -10,10 +10,8 @@ Op Macs zonder notch en op externe schermen verschijnt het als zwarte pil bovena
   Tijdens afspelen zet de notch uit met de hoes links en een bewegende golfvorm rechts.
 - **Songteksten** – tijdgesynchroniseerd via LRCLib; huidige regel in de speler, optioneel
   onder de notch, plus een apart tabblad dat meescrollt (tik op een regel om te springen).
-- **Vergrendelscherm** – grote hoes met een glazen speler eronder (hartje, vorige/pauze/volgende,
-  audio-uitgang), meelopende songtekst en widgets voor weer, batterij en AirPods.
-- **Audio-uitgang** – wissel tussen speakers, AirPods, AirPlay enz. en regel het volume,
-  vanuit de notch of het vergrendelscherm.
+- **Audio-uitgang** – wissel tussen speakers, AirPods, AirPlay enz. en regel het volume
+  vanuit de notch.
 - **Nummerwissel** – bij een nieuw nummer toont de notch kort titel en artiest.
 - **AirPods / Bluetooth-audio** – melding bij verbinden en ontkoppelen, met batterij (links/rechts).
 - **Batterij** – melding bij inpluggen/uittrekken en bij 20/10/5 %.
@@ -22,7 +20,7 @@ Op Macs zonder notch en op externe schermen verschijnt het als zwarte pil bovena
   uit, open ze, of deel ze via AirDrop.
 - **Instellingen** – starten bij inloggen; welk scherm; openen door aanwijzen of klikken;
   sneltoets ⌃⌥Spatie; grootte uitgeklapt; start-tabblad; voorkeursspeler; kleur uit de hoes;
-  batterijdrempel; vergrendelscherm-onderdelen en hoesgrootte (met voorbeeldknop); lade
+  batterijdrempel; lade
   kopieert bestanden of leegt zich bij afsluiten; standaardinstellingen herstellen;
   diagnose-tab.
 
@@ -58,7 +56,6 @@ Vereist macOS 14 Sonoma of nieuwer.
 
 - Video in de browser (Netflix, YouTube) en Tidal worden niet gevolgd: daarvoor is het
   private MediaRemote-framework nodig, dat Apple sinds macOS 15.4 afschermt voor andere apps.
-- Het vergrendelscherm gebruikt een niet-openbare macOS-techniek (SkyLight). Werkt die na
-  een macOS-update niet meer, dan verschijnt er niets; de rest van de app werkt gewoon door.
+- Geen speler of widgets op het vergrendelscherm.
 - Het hartje werkt alleen met Apple Music (Spotify heeft daar geen koppeling voor).
 - Geen equalizer, geen Focus-widget en geen licentiesysteem.
