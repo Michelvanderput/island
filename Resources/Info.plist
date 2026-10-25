@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>Island</string>
+    <key>CFBundleDisplayName</key><string>Island</string>
+    <key>CFBundleIdentifier</key><string>nl.michelvanderput.island</string>
+    <key>CFBundleExecutable</key><string>Island</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>1.0</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <key>LSUIElement</key><true/>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Island bedient Spotify en Muziek vanuit de notch (afspelen, pauzeren, overslaan).</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Island toont wanneer je AirPods of andere Bluetooth-audio verbinden, met batterij.</string>
+    <key>NSLocationUsageDescription</key>
+    <string>Island gebruikt je globale locatie om het weer in de notch te tonen.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Island gebruikt je globale locatie om het weer in de notch te tonen.</string>
+</dict>
+</plist>
