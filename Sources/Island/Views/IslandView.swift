@@ -111,7 +111,7 @@ struct HUDView: View {
         switch hud {
         case .charging(_, let plugged):
             Image(systemName: plugged ? "bolt.fill" : "powerplug.fill")
-                .foregroundStyle(plugged ? .green : .white)
+                .foregroundStyle(plugged ? Color.green : Color.white)
         case .lowBattery:
             Image(systemName: "battery.25")
                 .foregroundStyle(.red)
@@ -128,7 +128,7 @@ struct HUDView: View {
                 Text("\(level)%")
                 Image(systemName: batterySymbol(level: level, charging: plugged))
             }
-            .foregroundStyle(plugged ? .green : .white)
+            .foregroundStyle(plugged ? Color.green : Color.white)
         case .lowBattery(let level):
             Text("\(level)%").foregroundStyle(.red)
         case .bluetooth(let info, let connected):

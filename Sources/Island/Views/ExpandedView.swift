@@ -69,7 +69,7 @@ private struct StatusCluster: View {
                 HStack(spacing: 4) {
                     Text("\(battery.level)%")
                     Image(systemName: batterySymbol(level: battery.level, charging: battery.isCharging))
-                        .foregroundStyle(battery.level <= 20 && !battery.isPluggedIn ? .red : (battery.isCharging ? .green : .white))
+                        .foregroundStyle(battery.level <= 20 && !battery.isPluggedIn ? Color.red : (battery.isCharging ? Color.green : Color.white))
                 }
             }
             IconButton(symbol: "gearshape.fill", size: 11, action: openSettings)

@@ -75,7 +75,7 @@ struct IconButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(active ? .white : .white.opacity(hovering ? 0.9 : 0.55))
+                .foregroundStyle(active ? Color.white : Color.white.opacity(hovering ? 0.9 : 0.55))
                 .frame(width: size + 14, height: size + 10)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
